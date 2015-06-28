@@ -16,7 +16,7 @@
 		}
 	},
 	"Resources" : {
-		"Ec2Instance" : {
+		"EC2Instance" : {
 			"Type" : "AWS::EC2::Instance",
 			"Properties" : {
 				"InstanceType" : { "Ref" : "InstanceType" },
@@ -40,6 +40,24 @@
 			  "CidrIp" : "0.0.0.0/0"
 			} ]
 		  }
+		}
+	},
+	"Outputs": {
+		"InstanceID" : {
+			"Description": "The Instance ID",  
+			"Value" : { "Ref" : "EC2Instance" }
+		},
+		"AZ" : {
+			"Description" : "Availability Zone of the newly created EC2 instance",
+			"Value" : { "Fn::GetAtt" : [ "EC2Instance", "AvailabilityZone" ] }
+		},
+		"PublicDNS" : {
+		  "Description" : "Public DNSName of the newly created EC2 instance",
+		  "Value" : { "Fn::GetAtt" : [ "EC2Instance", "PublicDnsName" ] }
+		},
+		"PublicIP" : {
+		  "Description" : "Public IP address of the newly created EC2 instance",
+		  "Value" : { "Fn::GetAtt" : [ "EC2Instance", "PublicIp" ] }
 		}
 	}
 }
