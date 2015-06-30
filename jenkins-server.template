@@ -1,0 +1,84 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+	"Description" : "Create an Amazon EC2 instance running Debian Jessie with a Jenkins installation. The AMI is hosted in Frankfurt. Creates an EC2 security group for the instance to give you SSH access and access on port 8080 for Jenkins.",
+	"Parameters" : {
+		"KeyName" : {
+			"Description" : "The EC2 Key Pair to allow SSH access to the instance",
+			"Type" : "AWS::EC2::KeyPair::KeyName"
+		},
+		"InstanceType" : {
+			"Description" : "WebServer EC2 instance type",
+			"Type" : "String",
+			"Default" : "t2.micro",
+			"AllowedValues" : [ "t1.micro", "t2.micro", "t2.small", "t2.medium", "m1.small", "m1.medium" ],
+			"ConstraintDescription" : "must be a valid EC2 instance type."
+		},
+		"SSHLocation" : {
+			"Description" : "The IP address range that can be used to SSH to the EC2 instances",
+			"Type": "String",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"Default": "0.0.0.0/0",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x"
+		}
+	},
+	"Resources" : {
+		"EC2Instance" : {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"InstanceType" : { "Ref" : "InstanceType" },
+				"SecurityGroups" : [ { "Ref" : "CISecurityGroup" } ],
+				"KeyName" : "AmazonFrankfurt",
+				"ImageId" : "ami-02724d1f",
+				"Tags" : [
+					{"Key" : "Name", "Value" : "jenkins-master"}
+				],
+				"UserData" : {
+					"Fn::Base64": {
+						"Fn::Join": [
+							"",
+							[
+								"#!/bin/bash \n",
+								"sudo wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -\n",
+								"echo \"deb http://pkg.jenkins-ci.org/debian binary/\" | sudo tee --append /etc/apt/sources.list > /dev/null\n",
+								"sudo apt-get update -y\n",
+								"sudo apt-get install git -y\n",
+								"sudo apt-get install jenkins -y\n",
+								"sudo /etc/init.d/jenkins start\n"
+							]
+						]
+					}
+				}
+			}
+		},
+		"CISecurityGroup" : {
+		  "Type" : "AWS::EC2::SecurityGroup",
+		  "Properties" : {
+			"GroupDescription" : "Enable SSH access via port 22",
+			"SecurityGroupIngress" : [ 
+				{ "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : { "Ref" : "SSHLocation"} },
+				{ "IpProtocol" : "tcp", "FromPort" : "8080", "ToPort" : "8080", "CidrIp" : "0.0.0.0/0" }
+			]
+		  }
+		}
+	},
+	"Outputs": {
+		"InstanceID" : {
+			"Description": "The Instance ID",  
+			"Value" : { "Ref" : "EC2Instance" }
+		},
+		"AZ" : {
+			"Description" : "Availability Zone of the newly created EC2 instance",
+			"Value" : { "Fn::GetAtt" : [ "EC2Instance", "AvailabilityZone" ] }
+		},
+		"PublicDNS" : {
+		  "Description" : "Public DNSName of the newly created EC2 instance",
+		  "Value" : { "Fn::GetAtt" : [ "EC2Instance", "PublicDnsName" ] }
+		},
+		"PublicIP" : {
+		  "Description" : "Public IP address of the newly created EC2 instance",
+		  "Value" : { "Fn::GetAtt" : [ "EC2Instance", "PublicIp" ] }
+		}
+	}
+}
