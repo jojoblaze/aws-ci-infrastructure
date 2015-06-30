@@ -1,0 +1,12 @@
+
+
+BASE_TEMPLATE_PATH=file://D://WEB_PROJECTS//aws-infrastracture-ci//debian-jessie-amd64-hvm-ebs-ami-02724d1f.template
+
+#validate a template
+aws cloudformation validate-template --template-body <TEMPLATE_PATH>
+
+#create a stack
+aws cloudformation create-stack --stack-name ci-stack --template-body <TEMPLATE_PATH> --parameters ParameterKey=KeyName,ParameterValue=AmazonFrankfurt
+
+#delete the stack
+aws cloudformation delete-stack --stack-name ci-stack
